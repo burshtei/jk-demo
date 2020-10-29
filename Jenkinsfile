@@ -1,33 +1,66 @@
 pipeline {
-    agent {
-        label 'Slave'
+  agent {
+    label 'Slave'
+  }
+  stages {
+    stage('Stage 01') {
+      steps {
+        sh 'npm install'
+      }
     }
 
-    stages {
-        stage('Stage 01') {
-            steps { 
-                git url: 'https://github.com/burshtei/jk-demo.git'
-            }
+    stage('Tests') {
+      parallel {
+        stage('Test1') {
+          steps {
+            sh 'npm run test1'
+          }
         }
-        stage('Stage 02'){
-            steps { 
-                sh 'npm install'
-            }
+
+        stage('Test 2') {
+          steps {
+            sh 'npm run test2'
+          }
         }
-        stage('Stage 03'){
-            steps {
-                sh 'npm test'
-            }
+
+        stage('Test 3 ') {
+          steps {
+            sh 'npm run test3'
+          }
         }
-        stage('Stage 04'){
-            steps { 
-                sh 'npm run build'
-            }
-        }
-        stage('Stage 05'){
-            steps {
-                archiveArtifacts artifacts: '*.zip'
-            }
-        }
+
+      }
     }
+
+    stage('Test Env') {
+      agent {
+        node {
+          label 'Test'
+        }
+
+      }
+      steps {
+        sh 'docker-compose up -d'
+      }
+    }
+
+    stage('Stage 04') {
+      steps {
+        input(message: 'Deployment Approved ?', id: 'app')
+      }
+    }
+
+    stage('Prod Env') {
+      agent {
+        node {
+          label 'Production'
+        }
+
+      }
+      steps {
+        sh 'docker-compose up -d'
+      }
+    }
+
+  }
 }
